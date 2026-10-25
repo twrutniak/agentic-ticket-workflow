@@ -12,6 +12,8 @@ import logging
 import sys
 from datetime import UTC, datetime
 
+from temporalio import activity, workflow
+
 _STANDARD_ATTRS = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime", "taskName"}
 _TEMPORAL_KEYS = ("workflow_id", "run_id", "workflow_type", "activity_type", "attempt")
 
@@ -43,8 +45,6 @@ def setup_logging(level: str = "INFO") -> None:
     root.handlers[:] = [handler]
     root.setLevel(level)
     # Keep the context in `extra` only, not appended to the message text.
-    from temporalio import activity, workflow
-
     activity.logger.activity_info_on_message = False
     workflow.logger.workflow_info_on_message = False
 

@@ -29,6 +29,7 @@ Useful ones:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
+| `API_HOST_PORT` / `TEMPORAL_HOST_PORT` / `TEMPORAL_UI_HOST_PORT` | `8000` / `7233` / `8233` | host ports published by compose (e.g. `API_HOST_PORT=9000 docker compose up`) |
 | `LLM_MODE` | `fake` | `fake` (offline stand-in) or `real` |
 | `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | OpenRouter / – / `openai/gpt-4o-mini` | any OpenAI-compatible endpoint |
 | `HELPDESK_FAILURE_RATE` | `0.2` | share of Helpdesk calls that fail temporarily |

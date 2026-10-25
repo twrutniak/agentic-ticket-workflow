@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Sends the example tickets to a running service, approves the T-2 refund and prints the results.
 set -euo pipefail
-API=${API:-http://localhost:8000}
+ENV_FILE=$(dirname "$0")/../.env
+if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE"; set +a; fi
+API=${API:-http://localhost:${API_HOST_PORT:-8000}}
 TICKETS=$(dirname "$0")/../app/data/tickets.json
 
 python3 -c "import json,sys; [print(json.dumps(t)) for t in json.load(open(sys.argv[1]))]" "$TICKETS" |

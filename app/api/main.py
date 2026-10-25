@@ -11,9 +11,11 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from app.config import get_settings
 from app.domain.models import Approval, Ticket, TicketState
 from app.log import setup_logging, workflow_id_for
+from app.temporal.client import connect
 from app.temporal.gateway import (
     ApprovalNotAccepted,
     StartResult,
+    TemporalTicketGateway,
     TicketGateway,
     TicketNotFound,
     TicketView,
@@ -24,9 +26,6 @@ log = logging.getLogger("app.api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    from app.temporal.client import connect
-    from app.temporal.gateway import TemporalTicketGateway
-
     settings = get_settings()
     setup_logging(settings.log_level)
     client = await connect(settings)
