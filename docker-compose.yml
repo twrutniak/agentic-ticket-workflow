@@ -33,6 +33,9 @@ services:
       context: .
       target: base
     command: ["python", "-m", "app.worker"]
+    # Time between SIGTERM and SIGKILL; longer than WORKER_SHUTDOWN_GRACE_SECONDS (20 s)
+    # so running activities can finish.
+    stop_grace_period: 30s
     env_file:
       - path: .env
         required: false

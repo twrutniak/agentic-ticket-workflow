@@ -219,6 +219,11 @@ app/
   stored result for a known key. Half of its simulated failures happen *after* the operation is
   stored (like a timeout on a request that did reach the server), which is the case where a
   naive retry would refund twice; `tests/test_end_to_end.py` checks exactly this.
+- **Worker shutdown.** On SIGTERM (`docker stop`, a deployment rolling) the worker stops taking
+  new tasks and gives running activities `WORKER_SHUTDOWN_GRACE_SECONDS` (20 s) to finish; the
+  container's `stop_grace_period` (30 s) is longer, so it is not killed first. Activities still
+  running after that are cancelled and retried by Temporal on another worker; workflow state is
+  never lost, as it lives in Temporal. The process then exits normally and flushes queued logs.
 - **Duplicate requests.** The workflow ID comes from the ticket ID, and the API starts it with
   `WorkflowIDReusePolicy.REJECT_DUPLICATE`, so Temporal itself refuses a second start, whether the
   first run is still going or finished. The API returns the existing workflow (`created: false`,

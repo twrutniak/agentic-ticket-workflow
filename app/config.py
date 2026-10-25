@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     temporal_address: str = "localhost:7233"
     temporal_namespace: str = "default"
     task_queue: str = "tickets"
+    # Keep below the container's stop grace period (docker-compose: stop_grace_period).
+    worker_shutdown_grace_seconds: float = 20.0
 
     # LLM: "fake" needs no key and no network; "real" talks to any OpenAI-compatible
     # chat completions endpoint (OpenRouter, OpenAI, Azure OpenAI v1, Ollama, ...).
