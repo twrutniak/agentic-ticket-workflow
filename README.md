@@ -31,7 +31,7 @@ Useful ones:
 | --- | --- | --- |
 | `API_HOST_PORT` / `TEMPORAL_HOST_PORT` / `TEMPORAL_UI_HOST_PORT` | `8000` / `7233` / `8233` | host ports published by compose (e.g. `API_HOST_PORT=9000 docker compose up`) |
 | `LLM_MODE` | `fake` | `fake` (offline stand-in) or `real` |
-| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | OpenRouter / – / `openai/gpt-4o-mini` | any OpenAI-compatible endpoint |
+| `LLM_BASE_URL` / `LLM_MODEL` / `LLM_API_KEY` | – (required when `real`) | any OpenAI-compatible endpoint: OpenRouter, OpenAI, Azure OpenAI, Ollama, … (examples in `.env.example`) |
 | `HELPDESK_FAILURE_RATE` | `0.2` | share of Helpdesk calls that fail temporarily |
 | `LLM_FAKE_FAILURE_RATE` | `0.0` | share of fake LLM calls that fail temporarily |
 
@@ -39,8 +39,9 @@ To watch retries: `HELPDESK_FAILURE_RATE=0.6 LLM_FAKE_FAILURE_RATE=0.15 docker c
 run the demo, and open a workflow in the Web UI – failed attempts show up as activity retries,
 yet every action is performed once.
 
-To use a real model, put `LLM_MODE=real` and `LLM_API_KEY=...` in `.env` (for example an
-OpenRouter key) and restart.
+To use a real model, set `LLM_MODE=real`, `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY` in
+`.env` and restart. No provider is built in; if one of them is missing, the API and worker stop at
+startup with a clear error.
 
 ### Tests
 
@@ -342,6 +343,10 @@ were wrong at first:
 
 - The fake Helpdesk keeps idempotency keys in memory: a worker restart forgets them. A real
   Helpdesk / payment API must store keys server-side.
+- Activities are `async` and call the in-memory Helpdesk and repository synchronously, which is
+  fine because nothing waits on I/O. A real Helpdesk over HTTP would need an async client (e.g.
+  `httpx.AsyncClient`) or a sync activity run by Temporal in a thread pool, so it does not block
+  the worker's event loop.
 - Data (customers, invoices, KB) is static JSON; KB search is keyword overlap, not semantic.
 - The fake LLM is keyword-based and only covers ticket types like the examples.
 - One `decide` activity runs the whole agent loop; a transient error in a late turn repeats the

@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,10 +19,11 @@ class Settings(BaseSettings):
 
     # LLM: "fake" needs no key and no network; "real" talks to any OpenAI-compatible
     # chat completions endpoint (OpenRouter, OpenAI, Azure OpenAI v1, Ollama, ...).
+    # No provider is assumed: in "real" mode the endpoint, model and key must all be set.
     llm_mode: Literal["fake", "real"] = "fake"
-    llm_base_url: str = "https://openrouter.ai/api/v1"
+    llm_base_url: str | None = None
     llm_api_key: SecretStr | None = None
-    llm_model: str = "openai/gpt-4o-mini"
+    llm_model: str | None = None
     llm_timeout_seconds: float = 30.0
     llm_fake_failure_rate: float = Field(default=0.0, ge=0.0, le=1.0)
 
@@ -30,6 +31,18 @@ class Settings(BaseSettings):
     helpdesk_failure_rate: float = Field(default=0.2, ge=0.0, le=1.0)
 
     log_level: str = "INFO"
+
+    @model_validator(mode="after")
+    def _real_llm_is_configured(self) -> Settings:
+        if self.llm_mode == "real":
+            missing = [
+                name.upper()
+                for name in ("llm_base_url", "llm_model", "llm_api_key")
+                if not getattr(self, name)
+            ]
+            if missing:
+                raise ValueError(f"LLM_MODE=real needs {', '.join(missing)}")
+        return self
 
 
 @lru_cache
