@@ -31,10 +31,15 @@ class FakeHelpdesk:
         self._ids = itertools.count(1)
         self.operations: list[ActionResult] = []  # every operation actually performed
 
+    def _roll(self, idempotency_key: str) -> str | None:
+        """Decide whether this call fails: None, "before" or "after" the operation."""
+        if self._rng.random() >= self.failure_rate:
+            return None
+        return "after" if self._rng.random() < 0.5 else "before"
+
     def _perform(self, action: str, idempotency_key: str, details: dict) -> ActionResult:
-        fail = self._rng.random() < self.failure_rate
-        fail_after = fail and self._rng.random() < 0.5
-        if fail and not fail_after:
+        failure = self._roll(idempotency_key)
+        if failure == "before":
             raise TransientHelpdeskError("helpdesk temporarily unavailable (before the operation)")
         with self._lock:
             if idempotency_key in self._results:
@@ -46,7 +51,7 @@ class FakeHelpdesk:
             )
             self._results[idempotency_key] = result
             self.operations.append(result)
-        if fail_after:
+        if failure == "after":
             raise TransientHelpdeskError("helpdesk timed out (after the operation was recorded)")
         return result
 
