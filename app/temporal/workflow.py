@@ -110,7 +110,8 @@ class TicketWorkflow:
             proposed: Decision = await workflow.execute_activity_method(
                 TicketActivities.decide,
                 ticket,
-                start_to_close_timeout=timedelta(minutes=3),
+                # The whole agent loop: up to 8 LLM calls x LLM_TIMEOUT_SECONDS (30 s), plus margin.
+                start_to_close_timeout=timedelta(minutes=5),
                 retry_policy=LLM_RETRY,
             )
         except ActivityError as e:

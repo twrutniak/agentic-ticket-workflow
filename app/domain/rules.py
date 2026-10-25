@@ -6,6 +6,8 @@ workflow, so they must stay deterministic.
 
 from __future__ import annotations
 
+import math
+
 from app.domain.models import (
     ActionType,
     Category,
@@ -70,8 +72,9 @@ def _check_refund(decision: Decision, customer: Customer, invoices: list[Invoice
         return [f"invoice {invoice.invoice_id} belongs to another customer"]
 
     errors = []
-    if decision.amount_eur <= 0:
-        errors.append("refund amount must be positive")
+    # NaN compares false with everything, so it would slip past both checks below.
+    if not math.isfinite(decision.amount_eur) or decision.amount_eur <= 0:
+        errors.append("refund amount must be a positive number")
     if decision.amount_eur > invoice.amount_eur:
         errors.append(
             f"refund amount {decision.amount_eur:.2f} EUR exceeds invoice "

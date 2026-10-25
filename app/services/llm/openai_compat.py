@@ -31,6 +31,9 @@ class OpenAICompatibleLLM:
         except (openai.APIConnectionError, openai.APITimeoutError, openai.RateLimitError, openai.InternalServerError) as e:
             raise TransientLLMError(f"{type(e).__name__}: {e}") from e
         except openai.APIStatusError as e:
+            # 408 and 409 are temporary too (the SDK itself would retry them).
+            if e.status_code in (408, 409):
+                raise TransientLLMError(f"{type(e).__name__} (HTTP {e.status_code}): {e}") from e
             raise PermanentLLMError(f"{type(e).__name__} (HTTP {e.status_code}): {e}") from e
 
         if not response.choices:

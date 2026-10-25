@@ -204,12 +204,12 @@ app/
 | Where | Policy | Non-retryable |
 | --- | --- | --- |
 | `load_context` | 10 s timeout, max 3 attempts | unknown customer → escalate |
-| `decide` | 3 min timeout, max 4 attempts, backoff 2 s ×2 | auth / bad request from the provider, or no readable decision after 3 tries inside the loop → escalate with the reason |
+| `decide` | 5 min timeout, max 4 attempts, backoff 2 s ×2 | auth / bad request from the provider, or no readable decision after 3 tries inside the loop → escalate with the reason |
 | `execute_action` | 15 s timeout, max 6 attempts, backoff 1 s ×2 up to 30 s | after the limit the workflow **fails** with `helpdesk action failed: …` (visible in `GET` as `status: FAILED`) |
 | approval | 24 h timer (`workflow.wait_condition`) | timeout or rejection → escalate |
 
-- **Temporary vs permanent errors.** The LLM client maps connection errors, timeouts, 429 and
-  5xx to `TransientLLMError` (retried); other HTTP errors become `PermanentLLMError`. The OpenAI
+- **Temporary vs permanent errors.** The LLM client maps connection errors, timeouts, 429,
+  408/409 and 5xx to `TransientLLMError` (retried); other HTTP errors become `PermanentLLMError`. The OpenAI
   SDK's own retries are turned off (`max_retries=0`), so Temporal is the only place that retries.
   Unreadable model output is first sent back to the model with the error (up to 3 times in the
   loop); after that it is a non-retryable `ApplicationError`, since repeating the same
@@ -358,6 +358,10 @@ were wrong at first:
   earlier LLM calls (extra cost and latency).
 - Temporal runs as the dev server with in-memory storage in compose: state is lost on restart.
 - No authentication on the API; anyone who can reach it can approve a refund.
+- The rules do not know about earlier refunds: two tickets could each ask to refund the same
+  invoice. The human approval is the safeguard; a real system would check refunds per invoice.
+- `GET /tickets/{id}` reads the state with a workflow query, which needs a running worker (also
+  for finished tickets, as Temporal replays the history); with no worker it fails.
 - No comparison of the real LLM vs the fake on the example tickets yet (needs a key; see next steps).
 
 ## What I would do next

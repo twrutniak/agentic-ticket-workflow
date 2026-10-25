@@ -50,7 +50,8 @@ def test_escalate_and_close_need_reason(action):
         ({"action": "refund", "invoice_id": "INV-9999", "amount_eur": 1.0}, "does not exist"),
         ({"action": "refund", "invoice_id": "INV-3001", "amount_eur": 1.0}, "belongs to another customer"),
         ({"action": "refund", "invoice_id": "INV-1001", "amount_eur": 5000.0}, "exceeds invoice"),
-        ({"action": "refund", "invoice_id": "INV-1001", "amount_eur": 0.0}, "must be positive"),
+        ({"action": "refund", "invoice_id": "INV-1001", "amount_eur": 0.0}, "positive number"),
+        ({"action": "refund", "invoice_id": "INV-1001", "amount_eur": float("nan")}, "positive number"),
         ({"action": "refund", "invoice_id": "INV-1003", "amount_eur": 10.0}, "cannot be refunded"),
     ],
 )
