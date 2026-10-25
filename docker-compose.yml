@@ -1,0 +1,52 @@
+services:
+  temporal:
+    # Temporal dev server (in-memory persistence) with the Web UI on :8233.
+    image: temporalio/temporal:1.9.1
+    command: ["server", "start-dev", "--ip", "0.0.0.0", "--ui-ip", "0.0.0.0"]
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "localhost:7233"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      target: base
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "8000:8000"
+    depends_on:
+      temporal:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      target: base
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      # Can be overridden from the shell or .env, e.g. HELPDESK_FAILURE_RATE=0.6 docker compose up
+      HELPDESK_FAILURE_RATE: ${HELPDESK_FAILURE_RATE:-0.2}
+      LLM_FAKE_FAILURE_RATE: ${LLM_FAKE_FAILURE_RATE:-0.0}
+    depends_on:
+      temporal:
+        condition: service_healthy
+
+  tests:
+    build:
+      context: .
+      target: test
+    network_mode: none
+    profiles: ["test"]

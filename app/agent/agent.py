@@ -67,7 +67,7 @@ async def run_agent(
         if invalid_answers >= max_invalid_answers:
             raise AgentError(f"model gave no valid decision after {invalid_answers} attempts: {reason}")
 
-    for step in range(1, max_steps + 1):
+    for turn in range(1, max_steps + 1):
         response = await llm.complete(messages, TOOL_SPECS)
 
         if not response.tool_calls:
@@ -94,7 +94,7 @@ async def run_agent(
                     reject(f"unreadable decision: {e.errors(include_url=False)}")
                     output = f"Invalid decision, fix it and call {SUBMIT_DECISION} again: {e}"
                 else:
-                    log.info("agent decided", extra=extra | {"step": step, "decision": decision.model_dump()})
+                    log.info("agent decided", extra=extra | {"turn": turn, "decision": decision.model_dump()})
                     return decision
             else:
                 try:
@@ -102,7 +102,7 @@ async def run_agent(
                 except json.JSONDecodeError:
                     arguments = {}
                 output = tools.run(call.name, arguments if isinstance(arguments, dict) else {})
-                log.info("agent tool call", extra=extra | {"step": step, "tool": call.name, "arguments": arguments})
+                log.info("agent tool call", extra=extra | {"turn": turn, "tool": call.name, "arguments": arguments})
             messages.append({"role": "tool", "tool_call_id": call.id, "content": output})
 
     raise AgentError(f"model did not submit a decision within {max_steps} steps")
